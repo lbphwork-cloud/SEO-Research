@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Competitor Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --primary:#004aed;
+    --sec1:#00ffaa;
+    --sec2:#ffce04;
+    --sec3:#15cfff;
+    --ink:#16162a;
+    --muted:#6b7280;
+    --line:#e7e8ef;
+    --bg:#f5f6fb;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+
+  /* ---------- Config panel ---------- */
+  .config{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:28px;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+  .config h1{font-size:20px;font-weight:700;margin-bottom:4px}
+  .config .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/-1}
+  label{font-size:13px;font-weight:600}
+  label small{font-weight:400;color:var(--muted)}
+  input[type=text],input[type=file]{font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;width:100%}
+  input[type=text]:focus{outline:2px solid var(--primary);border-color:transparent}
+  select{font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;width:100%;cursor:pointer}
+  select:focus{outline:2px solid var(--primary);border-color:transparent}
+  .colorrow{display:flex;align-items:center;gap:10px}
+  input[type=color]{width:46px;height:42px;border:1px solid var(--line);border-radius:10px;padding:2px;background:#fff;cursor:pointer}
+  .hint{font-size:12px;color:var(--muted)}
+  .btn{font-family:inherit;font-size:15px;font-weight:600;color:#fff;background:var(--primary);border:none;border-radius:10px;padding:13px 22px;cursor:pointer;transition:.15s opacity}
+  .btn:hover{opacity:.9}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .actions{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .logoprev{height:38px;max-width:180px;object-fit:contain;display:none}
+  .err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;padding:10px 14px;border-radius:10px;font-size:13px;margin-top:14px;display:none}
+
+  /* ---------- Report ---------- */
+  #report{display:none}
+
+  /* Header — heavy primary */
+  .rephead{position:relative;overflow:hidden;border-radius:18px;padding:34px 36px;margin-bottom:22px;color:#fff;
+    background:linear-gradient(125deg,var(--primary) 0%,color-mix(in srgb,var(--primary) 72%,#000) 100%)}
+  .rephead::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;
+    background:color-mix(in srgb,var(--sec1) 50%,transparent);opacity:.25}
+  .rephead .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;position:relative;z-index:1}
+  .rephead .top{min-height:42px}
+  .rephead .logo img{height:42px;max-width:220px;object-fit:contain}
+  .rephead .logo-r{text-align:right}
+  .rephead .pill{margin-top:18px}
+  .rephead h2{font-size:27px;font-weight:700;margin-top:8px;position:relative;z-index:1}
+  .rephead .meta{font-size:13.5px;opacity:.92;margin-top:6px;position:relative;z-index:1}
+  .rephead .right{text-align:right;font-size:12.5px;opacity:.9;line-height:1.7}
+  .pill{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
+
+  .section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 26px;margin-bottom:22px}
+  .section h3{font-size:18px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+  .section h3 .dot{width:14px;height:14px;border-radius:4px;background:var(--primary)}
+  .section .desc{color:var(--muted);font-size:13px;margin-bottom:18px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  thead th.self-col{color:#fff;background:var(--primary);border-radius:8px 8px 0 0}
+  td.metric{font-weight:600;white-space:normal}
+  .self-col{background:color-mix(in srgb,var(--primary) 9%,#fff)}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+  .b-best{background:color-mix(in srgb,var(--sec1) 20%,#fff);color:color-mix(in srgb,var(--sec1) 60%,#000)}
+  .b-self{background:rgba(255,255,255,.25);color:#fff}
+  .scroll{overflow-x:auto}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .stat{position:relative;border:1px solid var(--line);border-radius:12px;padding:16px;overflow:hidden}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--primary)}
+  .stat .k{font-size:12px;color:var(--muted);font-weight:500}
+  .stat .v{font-size:26px;font-weight:700;margin-top:2px;color:var(--primary)}
+  .stat .d{font-size:12px;font-weight:600;margin-top:2px}
+  .up{color:#16a34a}.down{color:#dc2626}
+
+  /* charts */
+  .chartwrap{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.chartwrap{grid-template-columns:1fr}}
+  .chartbox h4{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--ink)}
+  .hbar-row{display:flex;align-items:center;gap:12px;margin-bottom:11px;font-size:12.5px}
+  .hbar-row .lbl{width:130px;flex:none;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hbar-row .track{flex:1;background:#eef0f6;border-radius:7px;height:22px;overflow:hidden}
+  .hbar-row .track > i{display:block;height:100%;border-radius:7px;transition:width .5s}
+  .hbar-row .val{width:78px;flex:none;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .stackbar{display:flex;height:26px;border-radius:7px;overflow:hidden;margin:7px 0 3px}
+  .stackbar > i{height:100%}
+  .stk-lbl{font-size:12px;font-weight:600;margin-top:10px;display:flex;justify-content:space-between}
+
+  /* SWOT */
+  .swot{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .quad{border-radius:14px;padding:18px 20px;border:1px solid var(--line)}
+  .quad h4{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .quad ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .quad li{font-size:13px;padding-left:18px;position:relative;line-height:1.45}
+  .quad li::before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;border-radius:50%}
+  .q-s{background:color-mix(in srgb,var(--sec1) 7%,#fff);border-color:color-mix(in srgb,var(--sec1) 30%,#fff)}
+  .q-s h4{color:color-mix(in srgb,var(--sec1) 55%,#000)} .q-s li::before{background:var(--sec1)}
+  .q-w{background:#fef6f6;border-color:#fdd}
+  .q-w h4{color:#b91c1c}.q-w li::before{background:#ef4444}
+  .q-o{background:color-mix(in srgb,var(--primary) 6%,#fff);border-color:color-mix(in srgb,var(--primary) 25%,#fff)}
+  .q-o h4{color:var(--primary)}.q-o li::before{background:var(--primary)}
+  .q-t{background:color-mix(in srgb,var(--sec2) 8%,#fff);border-color:color-mix(in srgb,var(--sec2) 30%,#fff)}
+  .q-t h4{color:color-mix(in srgb,var(--sec2) 50%,#000)}.q-t li::before{background:var(--sec2)}
+
+  /* Executive summary */
+  .exec{background:linear-gradient(160deg,color-mix(in srgb,var(--primary) 6%,#fff),#fff);border:1px solid color-mix(in srgb,var(--primary) 22%,#fff);border-left:6px solid var(--primary)}
+  .exec h3 .dot{background:var(--primary)}
+  .exec .lead{font-size:15px;line-height:1.7;margin-bottom:16px}
+  .exec .lead b{color:var(--primary)}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:6px}
+  @media(max-width:820px){.pillars{grid-template-columns:1fr}}
+  .pillar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;border-top:4px solid var(--primary)}
+  .pillar .n{font-size:12px;font-weight:700;color:var(--primary);letter-spacing:.5px}
+  .pillar h5{font-size:15px;font-weight:700;margin:4px 0 8px}
+  .pillar p{font-size:13px;color:#374151;line-height:1.55}
+  .verdict{margin-top:20px;padding:16px 18px;border-radius:12px;background:var(--primary);color:#fff;font-size:14px;line-height:1.6}
+  .verdict b{font-weight:700}
+
+  /* edit + toolbar */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;position:sticky;top:0;z-index:20;
+    background:rgba(245,246,251,.92);backdrop-filter:blur(6px);padding:10px 0}
+  .toolbar button{font-family:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:10px;padding:10px 16px;cursor:pointer;transition:.15s}
+  .toolbar button:hover{border-color:var(--primary);color:var(--primary)}
+  .toolbar button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  #report.editing [contenteditable=true]{outline:1px dashed color-mix(in srgb,var(--primary) 50%,#fff);outline-offset:2px;border-radius:3px}
+  #report.editing [contenteditable=true]:focus{outline:2px solid var(--primary);background:color-mix(in srgb,var(--primary) 5%,#fff)}
+  .editnote{font-size:12.5px;color:var(--primary);font-weight:500;display:none;align-items:center}
+  #report.editing .editnote{display:flex}
+
+  @media(max-width:760px){.grid,.swot{grid-template-columns:1fr}}
+  @media print{
+    .config,.no-print,.toolbar{display:none!important}
+    body{background:#fff}
+    .wrap{max-width:100%;padding:0}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .section,.rephead,.quad,.pillar,.stat,.chartbox{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ CONFIG PANEL ============ -->
+  <div class="config" id="panel">
+    <h1>🔍 SEO Competitor Analysis Builder</h1>
+    <p class="sub">Nhập domain nội tại, tải file Batch Analysis (.xlsx) từ Ahrefs, tùy chỉnh màu &amp; logo → xuất báo cáo.</p>
+
+    <div class="grid">
+      <div class="field">
+        <label>Domain nội tại <small>(website của bạn)</small></label>
+        <input type="text" id="selfDomain" placeholder="vd: seongon.com">
+      </div>
+      <div class="field">
+        <label>File chỉ số Ahrefs <small>(.xlsx Batch Analysis)</small></label>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      </div>
+
+      <div class="field">
+        <label>Màu chính</label>
+        <div class="colorrow">
+          <input type="color" id="cPrimary" value="#004aed">
+          <input type="text" id="cPrimaryHex" value="#004aed">
+        </div>
+      </div>
+      <div class="field">
+        <label>Màu phụ <small>(1 hoặc nhiều, cách nhau dấu phẩy)</small></label>
+        <input type="text" id="cSecondary" placeholder="#00ffaa, #ffce04, #15cfff" value="#00ffaa, #ffce04, #15cfff">
+        <span class="hint">Dùng cho biểu đồ, SWOT, điểm nhấn.</span>
+      </div>
+
+      <div class="field">
+        <label>Định hướng đánh giá website nội tại <small>(điều hướng giọng báo cáo)</small></label>
+        <select id="tone">
+          <option value="-2">Chê mạnh</option>
+          <option value="-1">Chê</option>
+          <option value="0" selected>Bình thường</option>
+          <option value="1">Khen</option>
+          <option value="2">Khen mạnh</option>
+        </select>
+        <span class="hint">Số liệu &amp; biểu đồ giữ nguyên — chỉ đổi văn phong Tổng kết, thứ tự SWOT &amp; kết luận.</span>
+      </div>
+      <div class="field">
+        <label>Logo của chúng tôi <small>(Agency — hiển thị bên trái)</small></label>
+        <div class="colorrow">
+          <input type="file" id="logoInput" accept="image/*" style="max-width:320px">
+          <img id="logoPrev" class="logoprev" alt="our logo">
+        </div>
+      </div>
+      <div class="field">
+        <label>Logo khách hàng <small>(Client — hiển thị bên phải)</small></label>
+        <div class="colorrow">
+          <input type="file" id="clientLogoInput" accept="image/*" style="max-width:320px">
+          <img id="clientLogoPrev" class="logoprev" alt="client logo">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="genBtn">⚡ Tạo báo cáo</button>
+      <button class="btn ghost" id="dlBtn" style="display:none">⬇ Tải báo cáo HTML</button>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <!-- ============ REPORT ============ -->
+  <div id="report"></div>
+
+</div>
+
+<script>
+/* ---------------- Helpers ---------------- */
+const $ = s => document.querySelector(s);
+const num = v => (v===null||v===undefined||v==='')?null:(typeof v==='number'?v:parseFloat(String(v).replace(/[, ]/g,''))||null);
+const fmt = v => v===null?'—':v.toLocaleString('en-US',{maximumFractionDigits: v<10?2:0});
+const fmtMoney = v => v===null?'—':'$'+v.toLocaleString('en-US',{maximumFractionDigits:0});
+function cleanDomain(d){return String(d||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/.*$/,'').replace(/\/$/,'');}
+
+const COLS = {
+  target:'Target', ur:'URL Rating', dr:'Domain Rating', rank:'Ahrefs Rank',
+  okw:'Organic / Total Keywords', kTop3:'Organic / Keywords (Top 3)', k410:'Organic / Keywords (4-10)',
+  k1120:'Organic / Keywords (11-20)', k2150:'Organic / Keywords (21-50)', k51:'Organic / Keywords (51+)',
+  traffic:'Organic / Traffic', value:'Organic / Value', countries:'Organic / Top Countries',
+  pkw:'Paid / Keywords', pads:'Paid / Ads', ptraffic:'Paid / Traffic', pcost:'Paid / Cost',
+  refAll:'Ref. domains / All', refFol:'Ref. domains / Followed', refNo:'Ref. domains / Not followed',
+  blAll:'Backlinks / All', blFol:'Backlinks / Followed', blNo:'Backlinks / Not followed'
+};
+
+let STATE = {rows:[], self:null, comps:[]};
+let PALETTE = ['#004aed','#00ffaa','#ffce04','#15cfff'];
+
+/* ---------------- Color sync ---------------- */
+$('#cPrimary').addEventListener('input',e=>$('#cPrimaryHex').value=e.target.value);
+$('#cPrimaryHex').addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value))$('#cPrimary').value=e.target.value;});
+$('#logoInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=ev=>{const p=$('#logoPrev');p.src=ev.target.result;p.style.display='block';}; r.readAsDataURL(f);
+});
+$('#clientLogoInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=ev=>{const p=$('#clientLogoPrev');p.src=ev.target.result;p.style.display='block';}; r.readAsDataURL(f);
+});
+
+/* ---------------- Parse file ---------------- */
+$('#fileInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      STATE.rows=XLSX.utils.sheet_to_json(ws,{defval:null});
+      showErr('');
+    }catch(err){showErr('Không đọc được file: '+err.message);}
+  };
+  r.readAsArrayBuffer(f);
+});
+function showErr(m){const e=$('#err');e.textContent=m;e.style.display=m?'block':'none';}
+
+/* ---------------- Build domain object ---------------- */
+function rowToObj(r){
+  const o={};
+  for(const k in COLS){o[k]=(k==='target'||k==='countries')?r[COLS[k]]:num(r[COLS[k]]);}
+  o.domain=cleanDomain(o.target);
+  o.trPerKw=(o.traffic&&o.okw)?o.traffic/o.okw:null;
+  o.blPerRef=(o.blAll&&o.refAll)?o.blAll/o.refAll:null;
+  o.top3Share=(o.kTop3&&o.okw)?o.kTop3/o.okw*100:null;
+  o.folShare=(o.refFol&&o.refAll)?o.refFol/o.refAll*100:null;
+  return o;
+}
+
+/* ---------------- Generate ---------------- */
+$('#genBtn').addEventListener('click',()=>{
+  applyColors();
+  if(!STATE.rows.length){showErr('Bạn chưa tải file .xlsx chỉ số Ahrefs.');return;}
+  const selfIn=cleanDomain($('#selfDomain').value);
+  if(!selfIn){showErr('Bạn chưa nhập domain nội tại.');return;}
+  const all=STATE.rows.map(rowToObj).filter(o=>o.domain);
+  const self=all.find(o=>o.domain===selfIn||o.domain.includes(selfIn)||selfIn.includes(o.domain));
+  if(!self){showErr('Không tìm thấy domain "'+selfIn+'" trong file. Domain có trong file: '+all.map(o=>o.domain).join(', '));return;}
+  const comps=all.filter(o=>o!==self);
+  if(!comps.length){showErr('File chỉ có 1 domain — cần thêm domain đối thủ để so sánh.');return;}
+  STATE.self=self; STATE.comps=comps; STATE.all=all;
+  showErr('');
+  renderReport();
+  $('#dlBtn').style.display='inline-block';
+  $('#report').scrollIntoView({behavior:'smooth'});
+});
+
+function applyColors(){
+  const p=$('#cPrimaryHex').value.trim()||'#004aed';
+  const secs=$('#cSecondary').value.split(',').map(s=>s.trim()).filter(Boolean);
+  document.documentElement.style.setProperty('--primary',p);
+  document.documentElement.style.setProperty('--sec1',secs[0]||'#00ffaa');
+  document.documentElement.style.setProperty('--sec2',secs[1]||secs[0]||'#ffce04');
+  document.documentElement.style.setProperty('--sec3',secs[2]||secs[0]||'#15cfff');
+  PALETTE=[p,secs[0]||'#00ffaa',secs[1]||'#ffce04',secs[2]||'#15cfff',...secs.slice(3)];
+}
+const compColor=i=>PALETTE[(i%(PALETTE.length-1))+1]||'#9aa0b5';
+
+/* ===================================================================
+   ANALYSIS ENGINE (B1)
+=================================================================== */
+function analyze(self,comps,all){
+  const avg=k=>{const v=comps.map(c=>c[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;};
+  const rank=(k,low=false)=>{const v=all.map(o=>o[k]).filter(x=>x!=null).sort((a,b)=>low?a-b:b-a);return self[k]==null?null:v.indexOf(self[k])+1;};
+  const S=[],W=[],O=[],T=[];
+
+  const drAvg=avg('dr');
+  if(self.dr!=null&&drAvg!=null){
+    if(self.dr>=drAvg) S.push(`Domain Rating ${self.dr} cao hơn trung bình đối thủ (${drAvg.toFixed(0)}) — nền tảng uy tín tốt.`);
+    else W.push(`Domain Rating ${self.dr} thấp hơn trung bình đối thủ (${drAvg.toFixed(0)}) — cần đẩy mạnh link building chất lượng.`);
+  }
+  const refAvg=avg('refAll');
+  if(self.refAll!=null&&refAvg!=null){
+    if(self.refAll>=refAvg) S.push(`${fmt(self.refAll)} referring domains, vượt trung bình đối thủ (${fmt(refAvg)}).`);
+    else {W.push(`Chỉ ${fmt(self.refAll)} referring domains, dưới trung bình (${fmt(refAvg)}).`);
+          O.push(`Thu hẹp khoảng cách ~${fmt(refAvg-self.refAll)} referring domains để bắt kịp mặt bằng đối thủ.`);}
+  }
+  if(self.folShare!=null){
+    if(self.folShare<60) W.push(`Tỉ lệ referring domains followed chỉ ${self.folShare.toFixed(0)}% — nhiều link không truyền sức mạnh; rà soát hồ sơ backlink.`);
+    else S.push(`${self.folShare.toFixed(0)}% referring domains là followed — hồ sơ backlink lành mạnh.`);
+  }
+  const trAvg=avg('traffic');
+  if(self.traffic!=null&&trAvg!=null){
+    if(self.traffic>=trAvg) S.push(`Organic traffic ${fmt(self.traffic)}/tháng, trên trung bình đối thủ (${fmt(trAvg)}).`);
+    else W.push(`Organic traffic ${fmt(self.traffic)}/tháng, dưới trung bình đối thủ (${fmt(trAvg)}).`);
+  }
+  const kwAvg=avg('okw');
+  if(self.okw!=null&&kwAvg!=null&&self.okw<kwAvg)
+    O.push(`Đối thủ xếp hạng trung bình ${fmt(kwAvg)} từ khóa vs bạn ${fmt(self.okw)} — còn dư địa mở rộng nội dung theo cụm chủ đề.`);
+  if(self.top3Share!=null){
+    if(self.top3Share>=35) S.push(`${self.top3Share.toFixed(0)}% từ khóa nằm Top 3 — độ phù hợp & thẩm quyền nội dung cao.`);
+    else O.push(`Chỉ ${self.top3Share.toFixed(0)}% từ khóa ở Top 3 — tối ưu on-page & internal link để đẩy từ khóa trang 1 lên Top 3.`);
+  }
+  const effAvg=avg('trPerKw');
+  if(self.trPerKw!=null&&effAvg!=null&&self.trPerKw<effAvg)
+    O.push(`Traffic/từ khóa (${self.trPerKw.toFixed(1)}) thấp hơn đối thủ (${effAvg.toFixed(1)}) — nhắm nhóm từ khóa volume cao hơn hoặc cải thiện CTR.`);
+  comps.forEach(c=>{
+    if(c.dr!=null&&self.dr!=null&&c.dr-self.dr>=10)
+      T.push(`${c.domain} có DR ${c.dr} (cao hơn bạn ${c.dr-self.dr} điểm) — đối thủ link-authority mạnh.`);
+    if(c.traffic!=null&&self.traffic!=null&&c.traffic>self.traffic*1.5)
+      T.push(`${c.domain} có organic traffic ${fmt(c.traffic)} (gấp ~${(c.traffic/self.traffic).toFixed(1)}× bạn) — áp lực thị phần tìm kiếm.`);
+    if(c.ptraffic!=null&&c.ptraffic>0&&(!self.ptraffic||self.ptraffic===0))
+      T.push(`${c.domain} đang chạy paid search (${fmt(c.ptraffic)} traffic) trong khi bạn chưa — họ phủ cả kênh trả phí.`);
+  });
+  if(!self.ptraffic||self.ptraffic===0)
+    O.push(`Bạn gần như chưa khai thác Paid Search — có thể test Google Ads cho nhóm từ khóa thương mại giá trị cao.`);
+
+  const dedup=a=>[...new Set(a)].slice(0,6);
+  return {S:dedup(S),W:dedup(W),O:dedup(O),T:dedup(T),
+    drAvg,trAvg,refAvg,kwAvg,
+    trRank:rank('traffic'),drRank:rank('dr'),refRank:rank('refAll'),N:all.length};
+}
+
+/* ===================================================================
+   CHART BUILDERS (pure SVG/HTML, offline)
+=================================================================== */
+function hBars(items,fmtFn){
+  const max=Math.max(...items.map(i=>i.value||0))||1;
+  return items.map(i=>`<div class="hbar-row">
+      <div class="lbl" title="${i.label}">${i.label}</div>
+      <div class="track"><i style="width:${Math.max((i.value||0)/max*100,2)}%;background:${i.color}"></i></div>
+      <div class="val">${fmtFn(i.value)}</div></div>`).join('');
+}
+function donut(segs,centerTop,centerSub){
+  const tot=segs.reduce((a,s)=>a+s.value,0)||1;let off=0;const R=54,C=2*Math.PI*R;
+  const circles=segs.map(s=>{const len=s.value/tot*C;const c=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${s.color}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"></circle>`;off+=len;return c;}).join('');
+  return `<svg viewBox="0 0 140 140" width="150" height="150">${circles}
+    <text x="70" y="66" text-anchor="middle" font-size="20" font-weight="700" fill="var(--ink)">${centerTop}</text>
+    <text x="70" y="84" text-anchor="middle" font-size="9" fill="var(--muted)">${centerSub}</text></svg>`;
+}
+function legend(segs){return `<div class="legend">${segs.map(s=>`<span><i style="background:${s.color}"></i>${s.label}${s.pct!=null?' '+s.pct+'%':''}</span>`).join('')}</div>`;}
+
+/* ===================================================================
+   EXECUTIVE SUMMARY (narrative)
+=================================================================== */
+function execSummary(self,comps,all,a,tone){
+  tone=parseInt(tone)||0;
+  const totTraffic=all.reduce((s,o)=>s+(o.traffic||0),0)||1;
+  const sov=(self.traffic||0)/totTraffic*100;
+  const leader=[...all].sort((x,y)=>(y.traffic||0)-(x.traffic||0))[0];
+  const isLeader=leader===self;
+  const ordinal=a.trRank===1?'dẫn đầu':`đứng thứ ${a.trRank}/${a.N}`;
+
+  const intros={
+   '-2':`Đánh giá thẳng thắn: hiệu suất SEO tổng thể của <b>${self.domain}</b> đang ở mức đáng lo ngại so với mặt bằng đối thủ. `,
+   '-1':`Nhìn tổng thể, <b>${self.domain}</b> còn không ít điểm cần cải thiện rõ rệt so với nhóm đối thủ. `,
+   '0':'',
+   '1':`Nhìn chung, <b>${self.domain}</b> đang thể hiện tốt trên nhiều phương diện so với nhóm đối thủ. `,
+   '2':`Có thể khẳng định <b>${self.domain}</b> là một trong những website SEO nổi bật nhất trong nhóm so sánh. `
+  };
+
+  let lead=intros[String(tone)]+`Trong nhóm ${a.N} website được phân tích, <b>${self.domain}</b> ${ordinal} về lưu lượng tìm kiếm tự nhiên, nắm khoảng <b>${sov.toFixed(1)}% thị phần hiển thị (share of voice)</b> của tập đối thủ. `;
+  if(self.dr!=null&&a.drAvg!=null) lead+=`Domain Rating ${self.dr} ${self.dr>=a.drAvg?'cao hơn':'thấp hơn'} mặt bằng đối thủ (${a.drAvg.toFixed(0)}), `;
+  if(self.top3Share!=null) lead+=`với ${self.top3Share.toFixed(0)}% từ khóa đang nằm trong Top 3 kết quả. `;
+  if(!isLeader&&leader) lead+=`Đối thủ dẫn đầu hiện tại là <b>${leader.domain}</b> (${fmt(leader.traffic)} traffic/tháng) — đây là chuẩn mực (benchmark) để bám đuổi.`;
+  else lead+=`Đây là vị thế dẫn đầu cần được củng cố trước áp lực cạnh tranh.`;
+
+  // 3 strategic pillars derived from biggest gaps
+  const pillars=[];
+  // Authority
+  pillars.push({n:'TRỤ CỘT 01',h:'Củng cố Authority',
+    p:self.refAll!=null&&a.refAvg!=null&&self.refAll<a.refAvg
+      ? `Tăng tốc xây dựng referring domains (đang ${fmt(self.refAll)} vs TB ${fmt(a.refAvg)}). Ưu tiên link từ trang DR cao, báo chí ngành & digital PR để nâng Domain Rating bền vững.`
+      : `Duy trì lợi thế ${fmt(self.refAll)} referring domains. Tập trung chất lượng hơn số lượng, thanh lọc link độc & giữ tỉ lệ followed ${self.folShare?self.folShare.toFixed(0)+'%':'cao'}.`});
+  // Content / keywords
+  pillars.push({n:'TRỤ CỘT 02',h:'Mở rộng & nâng hạng nội dung',
+    p:self.top3Share!=null&&self.top3Share<35
+      ? `Chỉ ${self.top3Share.toFixed(0)}% từ khóa ở Top 3 — xây topic cluster, tối ưu on-page & internal link để đẩy nhóm từ khóa trang 1 lên Top 3, nơi tập trung phần lớn lượt click.`
+      : `Nền tảng nội dung mạnh (${self.top3Share?self.top3Share.toFixed(0):''}% từ khóa Top 3). Khai thác sâu các cụm chủ đề mới để mở rộng độ phủ từ khóa và bảo vệ thị phần.`});
+  // Channel mix
+  pillars.push({n:'TRỤ CỘT 03',h:'Đa dạng hóa kênh',
+    p:(!self.ptraffic||self.ptraffic===0)
+      ? `Chưa khai thác Paid Search trong khi một số đối thủ đã phủ kênh trả phí. Thử nghiệm Google Ads cho nhóm từ khóa thương mại giá trị cao để tăng độ phủ SERP ngắn hạn.`
+      : `Đang vận hành song song Organic & Paid. Tối ưu phân bổ ngân sách paid vào từ khóa chuyển đổi cao, để organic gánh nhóm từ khóa thông tin.`});
+
+  const verdicts={
+   '-2':`<b>Kết luận:</b> Nếu không hành động quyết liệt về authority và nội dung, ${self.domain} sẽ tiếp tục tụt lại so với đối thủ. Đây là thời điểm cần một chiến lược SEO bài bản và mức đầu tư nghiêm túc để xoay chuyển tình thế.`,
+   '-1':`<b>Kết luận:</b> ${self.domain} đã có nền tảng nhưng đang bộc lộ nhiều khoảng trống so với đối thủ. Cần ưu tiên khắc phục điểm yếu theo lộ trình 3 trụ cột trên trong 6–9 tháng tới.`,
+   '0':isLeader
+      ? `<b>Kết luận:</b> ${self.domain} đang ở thế dẫn đầu về hiển thị tự nhiên. Ưu tiên chiến lược là <b>phòng thủ thị phần</b> — củng cố authority và mở rộng nội dung trước khi đối thủ thu hẹp khoảng cách.`
+      : `<b>Kết luận:</b> ${self.domain} có nền tảng cạnh tranh tốt nhưng còn dư địa rõ rệt so với nhóm dẫn đầu. Lộ trình 3 trụ cột trên giúp <b>thu hẹp khoảng cách traffic và authority</b> trong 6–9 tháng tới.`,
+   '1':`<b>Kết luận:</b> ${self.domain} đang giữ vị thế cạnh tranh tốt. Phát huy các thế mạnh hiện có và khai thác cơ hội ở 3 trụ cột trên sẽ giúp <b>mở rộng khoảng cách</b> với đối thủ.`,
+   '2':`<b>Kết luận:</b> ${self.domain} đang dẫn dắt cuộc chơi SEO trong nhóm. Chiến lược trọng tâm là <b>củng cố ngôi đầu</b> và biến lợi thế hiện tại thành rào cản cạnh tranh dài hạn.`
+  };
+  const orders={'-2':['w','t','s','o'],'-1':['w','t','s','o'],'0':['s','w','o','t'],'1':['s','o','w','t'],'2':['s','o','w','t']};
+
+  return {lead,pillars,verdict:verdicts[String(tone)],swotOrder:orders[String(tone)]};
+}
+
+/* ===================================================================
+   RENDER
+=================================================================== */
+function renderReport(){
+  const {self,comps,all}=STATE;
+  const a=analyze(self,comps,all);
+  const tone=$('#tone').value;
+  const ex=execSummary(self,comps,all,a,tone);
+  const lp=$('#logoPrev'),cp=$('#clientLogoPrev');
+  const ourLogo=lp.src&&lp.style.display!=='none'?`<div class="logo"><img src="${lp.src}"></div>`:'<div></div>';
+  const clientLogo=cp.src&&cp.style.display!=='none'?`<div class="logo logo-r"><img src="${cp.src}"></div>`:'<div></div>';
+  const today=new Date().toLocaleDateString('vi-VN');
+
+  /* ---- comparison table ---- */
+  const metricDefs=[
+    ['Domain Rating','dr',false],['URL Rating','ur',false],['Ahrefs Rank','rank',true],
+    ['Organic Keywords','okw',false],['Từ khóa Top 3','kTop3',false],['Organic Traffic','traffic',false],
+    ['Organic Value ($)','value',false],['Referring Domains','refAll',false],['Backlinks','blAll',false],
+    ['Paid Keywords','pkw',false],['Paid Traffic','ptraffic',false]
+  ];
+  const head=`<th>Chỉ số</th><th class="self-col">${self.domain} <span class="badge b-self">Bạn</span></th>`+comps.map(c=>`<th>${c.domain}</th>`).join('');
+  const body=metricDefs.map(([label,key,low])=>{
+    const vals=all.map(o=>o[key]).filter(x=>x!=null);
+    const best=low?Math.min(...vals):Math.max(...vals);
+    const cell=o=>{const v=o[key];const isBest=v!=null&&v===best;const money=key==='value';
+      return `<td${o===self?' class="self-col"':''}>${money?fmtMoney(v):fmt(v)} ${isBest?'<span class="badge b-best">#1</span>':''}</td>`;};
+    return `<tr><td class="metric">${label}</td>${cell(self)}${comps.map(cell).join('')}</tr>`;
+  }).join('');
+
+  /* ---- stat cards ---- */
+  const stat=(label,key,peerKey,money)=>{
+    const sv=self[key],peer=a[peerKey];let delta='';
+    if(sv!=null&&peer!=null){const up=sv>=peer;const pct=peer?((sv-peer)/Math.abs(peer)*100):0;
+      delta=`<div class="d ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(pct).toFixed(0)}% vs TB đối thủ</div>`;}
+    return `<div class="stat"><div class="k">${label}</div><div class="v">${money?fmtMoney(sv):fmt(sv)}</div>${delta}</div>`;
+  };
+
+  /* ---- charts ---- */
+  const trItems=all.map((o,i)=>({label:o.domain,value:o.traffic,color:o===self?PALETTE[0]:compColor(all.filter(x=>x!==self).indexOf(o))}));
+  const drItems=all.map((o,i)=>({label:o.domain,value:o.dr,color:o===self?PALETTE[0]:compColor(all.filter(x=>x!==self).indexOf(o))}));
+  const refItems=all.map((o,i)=>({label:o.domain,value:o.refAll,color:o===self?PALETTE[0]:compColor(all.filter(x=>x!==self).indexOf(o))}));
+
+  // share of voice donut
+  const sovSegs=all.map((o,i)=>({label:o.domain,value:o.traffic||0,color:o===self?PALETTE[0]:compColor(all.filter(x=>x!==self).indexOf(o))}));
+  const totTr=sovSegs.reduce((s,x)=>s+x.value,0)||1;
+  sovSegs.forEach(s=>s.pct=Math.round(s.value/totTr*100));
+  const selfSov=Math.round((self.traffic||0)/totTr*100);
+
+  // keyword distribution stacked bar (self)
+  const kd=[['Top 3','kTop3'],['4–10','k410'],['11–20','k1120'],['21–50','k2150'],['51+','k51']];
+  const kdColors=['#5b46f5','#7b6af7','#22d39a','#f59e0b','#ef4444'].map((c,i)=> i===0?PALETTE[0]:[PALETTE[0],PALETTE[1]||'#22d39a',PALETTE[2]||'#f59e0b',PALETTE[3]||'#ef4444','#c7cad6'][i]||c );
+  const kdSegs=kd.map(([lbl,k],i)=>({label:lbl,value:self[k]||0,color:[PALETTE[0],'#8a7bf8',PALETTE[1]||'#22d39a',PALETTE[2]||'#f59e0b',PALETTE[3]||'#ef4444'][i]}));
+  const kdTot=kdSegs.reduce((s,x)=>s+x.value,0)||1;
+  const kdBar=kdSegs.map(s=>`<i style="width:${s.value/kdTot*100}%;background:${s.color}" title="${s.label}: ${fmt(s.value)}"></i>`).join('');
+
+  /* ---- SWOT ---- */
+  const swotList=arr=>arr.length?arr.map(x=>`<li>${x}</li>`).join(''):'<li style="color:var(--muted)">Không có mục nổi bật.</li>';
+  const quadDefs={
+    s:{cls:'q-s',title:'💪 Strengths — Điểm mạnh',data:a.S},
+    w:{cls:'q-w',title:'⚠️ Weaknesses — Điểm yếu',data:a.W},
+    o:{cls:'q-o',title:'🚀 Opportunities — Cơ hội',data:a.O},
+    t:{cls:'q-t',title:'🛡️ Threats — Thách thức',data:a.T}
+  };
+  const swotHTML=ex.swotOrder.map(k=>{const q=quadDefs[k];return `<div class="quad ${q.cls}"><h4>${q.title}</h4><ul>${swotList(q.data)}</ul></div>`;}).join('');
+
+  $('#report').innerHTML=`
+    <div class="toolbar no-print">
+      <button id="editToggle" onclick="toggleEdit(this)">✏️ Bật chỉnh sửa</button>
+      <button onclick="window.print()">🖨️ Xuất PDF</button>
+      <span class="editnote">✓ Đang ở chế độ sửa — click vào chữ để gõ đè, thêm/bớt nội dung. Bấm “Xuất PDF” khi xong.</span>
+    </div>
+    <div class="rephead">
+      <div class="top">
+        ${ourLogo}
+        ${clientLogo}
+      </div>
+      <span class="pill">SEO Competitor Report</span>
+      <h2>Competitor Analysis &amp; SWOT</h2>
+      <div class="meta">Domain nội tại: <b>${self.domain}</b> · So sánh với ${comps.length} đối thủ · Share of Voice ${selfSov}%</div>
+      <div class="meta" style="opacity:.82;margin-top:2px">Ngày tạo: ${today} · Nguồn: Ahrefs Batch Analysis</div>
+    </div>
+
+    <div class="section">
+      <h3><span class="dot"></span>Tổng quan vị thế</h3>
+      <p class="desc">Chỉ số chính của ${self.domain} so với trung bình ${comps.length} đối thủ.</p>
+      <div class="cards">
+        ${stat('Domain Rating','dr','drAvg',false)}
+        ${stat('Organic Traffic','traffic','trAvg',false)}
+        ${stat('Referring Domains','refAll','refAvg',false)}
+        <div class="stat"><div class="k">Hạng Organic Traffic</div><div class="v">#${a.trRank||'—'}<span style="font-size:15px;color:var(--muted)">/${a.N}</span></div><div class="d">trong nhóm so sánh</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3><span class="dot"></span>Biểu đồ trực quan</h3>
+      <p class="desc">Cột màu chính là website của bạn.</p>
+      <div class="chartwrap">
+        <div class="chartbox"><h4>Share of Voice — Thị phần Organic Traffic</h4>
+          <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">${donut(sovSegs,selfSov+'%',self.domain.slice(0,14))}<div>${legend(sovSegs)}</div></div>
+        </div>
+        <div class="chartbox"><h4>Organic Traffic / tháng</h4>${hBars(trItems,fmt)}</div>
+        <div class="chartbox"><h4>Domain Rating</h4>${hBars(drItems,fmt)}</div>
+        <div class="chartbox"><h4>Referring Domains</h4>${hBars(refItems,fmt)}</div>
+      </div>
+      <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">Phân bổ thứ hạng từ khóa — ${self.domain}</h4>
+        <div class="stackbar">${kdBar}</div>
+        <div class="stk-lbl"><span style="color:var(--muted);font-weight:500">Tổng ${fmt(kdTot)} từ khóa</span></div>
+        ${legend(kdSegs.map(s=>({label:s.label,color:s.color,pct:Math.round(s.value/kdTot*100)})))}
+      </div>
+    </div>
+
+    <div class="section">
+      <h3><span class="dot"></span>Bảng so sánh chi tiết</h3>
+      <p class="desc">Ô <span class="badge b-best">#1</span> = dẫn đầu chỉ số đó. Cột tô đậm là website của bạn.</p>
+      <div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
+    </div>
+
+    <div class="section">
+      <h3><span class="dot"></span>Phân tích SWOT</h3>
+      <p class="desc">Tự động suy luận từ chỉ số SEO của ${self.domain} trong tương quan đối thủ.</p>
+      <div class="swot">${swotHTML}</div>
+    </div>
+
+    <div class="section exec">
+      <h3><span class="dot"></span>Tổng kết &amp; Đề xuất chiến lược</h3>
+      <p class="lead">${ex.lead}</p>
+      <div class="pillars">
+        ${ex.pillars.map(p=>`<div class="pillar"><div class="n">${p.n}</div><h5>${p.h}</h5><p>${p.p}</p></div>`).join('')}
+      </div>
+      <div class="verdict">${ex.verdict}</div>
+    </div>
+  `;
+  $('#report').style.display='block';
+}
+
+/* ---------------- Inline editing ---------------- */
+const EDIT_SEL='h2,.meta,.pill,h3,.desc,h4,h5,.stat .k,.stat .v,.stat .d,td,th,.quad li,.quad h4,.lead,.pillar .n,.pillar p,.verdict,.stk-lbl,.legend span';
+function toggleEdit(btn){
+  const rep=$('#report');
+  const on=rep.classList.toggle('editing');
+  rep.querySelectorAll(EDIT_SEL).forEach(el=>{
+    if(el.closest('.toolbar'))return;
+    el.contentEditable=on;
+  });
+  btn.classList.toggle('on',on);
+  btn.textContent=on?'🔒 Khóa chỉnh sửa':'✏️ Bật chỉnh sửa';
+}
+
+/* ---------------- Download standalone HTML ---------------- */
+$('#dlBtn').addEventListener('click',()=>{
+  const cv=getComputedStyle(document.documentElement);
+  const styleEl=document.querySelector('style').outerHTML;
+  const inlineVars=`<style>:root{--primary:${cv.getPropertyValue('--primary')};--sec1:${cv.getPropertyValue('--sec1')};--sec2:${cv.getPropertyValue('--sec2')};--sec3:${cv.getPropertyValue('--sec3')};}</style>`;
+  const clone=$('#report').cloneNode(true);
+  clone.querySelectorAll('.toolbar').forEach(t=>t.remove());
+  clone.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));
+  const html=`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEO Report — ${STATE.self.domain}</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+${styleEl}${inlineVars}</head><body><div class="wrap" style="padding-top:28px">${clone.innerHTML}</div></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`SEO-Report-${STATE.self.domain}-${new Date().toISOString().slice(0,10)}.html`;a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
