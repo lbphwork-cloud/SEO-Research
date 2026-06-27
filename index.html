@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Competitor Analysis</title>
+<title>SEO Report Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -135,6 +135,46 @@
   .verdict{margin-top:20px;padding:16px 18px;border-radius:12px;background:var(--primary);color:#fff;font-size:14px;line-height:1.6}
   .verdict b{font-weight:700}
 
+  /* section selector */
+  .selector{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:#fbfcfe}
+  .selector .stitle{font-size:13px;font-weight:600;margin-bottom:4px}
+  .selector .shint{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .seclist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 18px}
+  @media(max-width:760px){.seclist{grid-template-columns:1fr}}
+  .secitem{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:.15s}
+  .secitem:hover{background:#fff}
+  .secitem input{margin-top:3px;width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
+  .secitem.core{opacity:.7}
+  .secitem .sl{font-weight:500}
+  .secitem .sd{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+  .badge-core{font-size:10px;background:color-mix(in srgb,var(--primary) 14%,#fff);color:var(--primary);padding:1px 7px;border-radius:10px;font-weight:600;margin-left:6px}
+  .suggest{margin-top:14px;border-top:1px dashed var(--line);padding-top:13px;display:none}
+  .suggest.show{display:block}
+  .suggest .sg-label{font-size:12.5px;font-weight:600;color:var(--primary);margin-bottom:9px}
+  .sg-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .sg-btn{font-family:inherit;font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--primary) 35%,#fff);
+    background:#fff;color:var(--primary);border-radius:20px;padding:7px 15px;cursor:pointer;transition:.15s}
+  .sg-btn:hover{background:var(--primary);color:#fff}
+  .sg-btn small{font-weight:400;opacity:.85}
+
+  /* scatter matrix */
+  .scatter{width:100%;max-width:620px;margin:0 auto;display:block}
+  .scatter text{font-family:'Space Grotesk',sans-serif}
+  .scatter .axl{font-size:11px;fill:var(--muted)}
+  .scatter .grid-l{stroke:var(--line);stroke-width:1}
+
+  /* per-section PDF toggle */
+  .rsection{position:relative}
+  .sec-ctrl{position:absolute;top:16px;right:18px;z-index:5;display:flex;align-items:center;gap:8px}
+  .sec-ctrl .eye{font-family:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--muted);
+    border-radius:20px;padding:5px 12px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .sec-ctrl .eye:hover{border-color:var(--primary);color:var(--primary)}
+  .rsection.sec-off{opacity:.42}
+  .rsection.sec-off::after{content:"Sẽ ẩn khi xuất PDF";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:600;color:var(--pink,#c00);background:repeating-linear-gradient(45deg,rgba(0,0,0,.02),rgba(0,0,0,.02) 10px,rgba(0,0,0,.05) 10px,rgba(0,0,0,.05) 20px);pointer-events:none;border-radius:16px}
+  .rsection.sec-off .sec-ctrl{opacity:1}
+  .rsection.sec-off .eye{border-color:var(--primary);color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,#fff)}
+
   /* edit + toolbar */
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;position:sticky;top:0;z-index:20;
     background:rgba(245,246,251,.92);backdrop-filter:blur(6px);padding:10px 0}
@@ -149,7 +189,8 @@
 
   @media(max-width:760px){.grid,.swot{grid-template-columns:1fr}}
   @media print{
-    .config,.no-print,.toolbar{display:none!important}
+    .config,.no-print,.toolbar,.sec-ctrl{display:none!important}
+    .rsection.sec-off{display:none!important}
     body{background:#fff}
     .wrap{max-width:100%;padding:0}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -162,7 +203,7 @@
 
   <!-- ============ CONFIG PANEL ============ -->
   <div class="config" id="panel">
-    <h1>🔍 SEO Competitor Analysis Builder</h1>
+    <h1>🔍 SEO Report Studio</h1>
     <p class="sub">Nhập domain nội tại, tải file Batch Analysis (.xlsx) từ Ahrefs, tùy chỉnh màu &amp; logo → xuất báo cáo.</p>
 
     <div class="grid">
@@ -200,6 +241,15 @@
         <span class="hint">Số liệu &amp; biểu đồ giữ nguyên — chỉ đổi văn phong Tổng kết, thứ tự SWOT &amp; kết luận.</span>
       </div>
       <div class="field">
+        <label>Nhận định bằng AI (Claude) <small>(cần deploy có API key)</small></label>
+        <label class="secitem" style="padding:8px 0">
+          <input type="checkbox" id="useAI" checked>
+          <span><span class="sl">Dùng Claude viết SWOT &amp; Kết luận</span>
+          <span class="sd">Khi chạy offline/không có backend sẽ tự dùng nhận định rule-based.</span></span>
+        </label>
+        <span class="hint" id="aiStatus" style="color:var(--primary)"></span>
+      </div>
+      <div class="field">
         <label>Logo của chúng tôi <small>(Agency — hiển thị bên trái)</small></label>
         <div class="colorrow">
           <input type="file" id="logoInput" accept="image/*" style="max-width:320px">
@@ -214,6 +264,16 @@
         </div>
       </div>
     </div>
+
+      <div class="field selector">
+        <div class="stitle">📋 Chọn mục đưa vào báo cáo</div>
+        <div class="shint">Tất cả đều là tùy chọn — tích mục bạn cần (ít nhất 1). Khi tích, hệ thống gợi ý thêm các mục liên quan để báo cáo trọn vẹn mà không tạo thừa.</div>
+        <div class="seclist" id="seclist"></div>
+        <div class="suggest" id="suggest">
+          <div class="sg-label">💡 Gợi ý kèm theo:</div>
+          <div class="sg-row" id="sgRow"></div>
+        </div>
+      </div>
 
     <div class="actions">
       <button class="btn" id="genBtn">⚡ Tạo báo cáo</button>
@@ -242,7 +302,9 @@ const COLS = {
   traffic:'Organic / Traffic', value:'Organic / Value', countries:'Organic / Top Countries',
   pkw:'Paid / Keywords', pads:'Paid / Ads', ptraffic:'Paid / Traffic', pcost:'Paid / Cost',
   refAll:'Ref. domains / All', refFol:'Ref. domains / Followed', refNo:'Ref. domains / Not followed',
-  blAll:'Backlinks / All', blFol:'Backlinks / Followed', blNo:'Backlinks / Not followed'
+  blAll:'Backlinks / All', blFol:'Backlinks / Followed', blNo:'Backlinks / Not followed',
+  refIP:'Ref. IPs / IPs', refSub:'Ref. IPs / Subnets',
+  outDomF:'Outgoing domains / Followed', outLinkAll:'Outgoing links / All time'
 };
 
 let STATE = {rows:[], self:null, comps:[]};
@@ -288,8 +350,53 @@ function rowToObj(r){
   return o;
 }
 
+/* ---------------- Section catalog + smart suggestions ---------------- */
+const SECTIONS=[
+  {key:'overview',label:'Tổng quan vị thế',desc:'Chỉ số chính + xếp hạng',rel:['charts','table','swot']},
+  {key:'charts',label:'Biểu đồ trực quan',desc:'Share of Voice, Traffic, DR, Ref domains',rel:['overview','kwdist','matrix']},
+  {key:'table',label:'Bảng so sánh chi tiết',desc:'Toàn bộ chỉ số dạng bảng',rel:['overview','backlink','swot']},
+  {key:'kwdist',label:'Phân bổ thứ hạng từ khóa',desc:'Top3 / 4–10 / 11–20 / 21–50 / 51+',rel:['opportunity','quickwins','charts']},
+  {key:'backlink',label:'Hồ sơ Backlink chuyên sâu',desc:'Followed/nofollow, IP, outgoing links',rel:['matrix','quickwins','channel']},
+  {key:'channel',label:'Cơ cấu Organic vs Paid',desc:'Mức độ phụ thuộc quảng cáo',rel:['opportunity','geo','quickwins']},
+  {key:'matrix',label:'Ma trận định vị cạnh tranh',desc:'DR × Traffic (biểu đồ bong bóng)',rel:['backlink','opportunity','quickwins']},
+  {key:'opportunity',label:'Định cỡ cơ hội Traffic',desc:'Khoảng cách với đối thủ dẫn đầu',rel:['kwdist','quickwins','channel']},
+  {key:'geo',label:'Tập trung địa lý',desc:'Thị trường trọng điểm theo quốc gia',rel:['channel','opportunity']},
+  {key:'quickwins',label:'Quick Wins',desc:'Việc ưu tiên làm trước (impact cao)',rel:['kwdist','backlink','opportunity']},
+  {key:'swot',label:'Phân tích SWOT',desc:'Điểm mạnh / yếu / cơ hội / thách thức',rel:['exec','quickwins','overview']},
+  {key:'exec',label:'Tổng kết & Đề xuất',desc:'Executive summary + 3 trụ cột',rel:['swot','quickwins','opportunity']},
+];
+const SECTION_ORDER=['overview','charts','kwdist','backlink','channel','matrix','opportunity','geo','quickwins','table','swot','exec'];
+const secLabel=k=>(SECTIONS.find(s=>s.key===k)||{}).label||k;
+let SG_REC=[];
+
+function renderSeclist(){
+  $('#seclist').innerHTML=SECTIONS.map(s=>`<label class="secitem ${s.core?'core':''}">
+    <input type="checkbox" data-sec="${s.key}" ${s.core?'checked disabled':''} onchange="onSecChange()">
+    <span><span class="sl">${s.label}${s.core?'<span class="badge-core">Mặc định</span>':''}</span>
+    <span class="sd">${s.desc}</span></span></label>`).join('');
+}
+function selectedKeys(){return [...document.querySelectorAll('#seclist input[data-sec]')].filter(i=>i.checked).map(i=>i.dataset.sec);}
+function tickSec(k){const i=document.querySelector(`#seclist input[data-sec="${k}"]`);if(i&&!i.disabled)i.checked=true;}
+function onSecChange(){
+  const sel=new Set(selectedKeys());
+  const rec=[];
+  SECTIONS.filter(s=>!s.core&&sel.has(s.key)).forEach(s=>(s.rel||[]).forEach(k=>{
+    const t=SECTIONS.find(x=>x.key===k);
+    if(t&&!t.core&&!sel.has(k)&&!rec.includes(k))rec.push(k);
+  }));
+  SG_REC=rec;
+  const sg=$('#suggest'),row=$('#sgRow');
+  if(!rec.length){sg.classList.remove('show');row.innerHTML='';return;}
+  sg.classList.add('show');
+  const sizes=[...new Set([Math.min(2,rec.length),Math.min(4,rec.length),rec.length].filter(n=>n>0))];
+  const tname=n=>n<=2?'Gói gọn':n<=4?'Gói vừa':'Đầy đủ';
+  row.innerHTML=sizes.map(n=>`<button type="button" class="sg-btn" onclick="addSuggest(${n})">${tname(n)} <small>+${n}: ${rec.slice(0,n).map(secLabel).join(', ')}</small></button>`).join('');
+}
+function addSuggest(n){SG_REC.slice(0,n).forEach(tickSec);onSecChange();}
+renderSeclist();
+
 /* ---------------- Generate ---------------- */
-$('#genBtn').addEventListener('click',()=>{
+$('#genBtn').addEventListener('click',async ()=>{
   applyColors();
   if(!STATE.rows.length){showErr('Bạn chưa tải file .xlsx chỉ số Ahrefs.');return;}
   const selfIn=cleanDomain($('#selfDomain').value);
@@ -299,12 +406,38 @@ $('#genBtn').addEventListener('click',()=>{
   if(!self){showErr('Không tìm thấy domain "'+selfIn+'" trong file. Domain có trong file: '+all.map(o=>o.domain).join(', '));return;}
   const comps=all.filter(o=>o!==self);
   if(!comps.length){showErr('File chỉ có 1 domain — cần thêm domain đối thủ để so sánh.');return;}
+  if(!selectedKeys().length){showErr('Hãy tích ít nhất 1 mục để đưa vào báo cáo.');return;}
   STATE.self=self; STATE.comps=comps; STATE.all=all;
   showErr('');
-  renderReport();
+  await generate();
+});
+
+function setStatus(m){const e=$('#aiStatus');if(e)e.textContent=m||'';}
+
+async function generate(){
+  let ai=null;
+  const wantAI=$('#useAI')&&$('#useAI').checked;
+  if(wantAI){
+    setStatus('🤖 Đang nhờ Claude viết nhận định...');
+    try{ ai=await getAINarrative(); setStatus('✓ Đã dùng nhận định từ Claude.'); }
+    catch(e){ ai=null; setStatus('⚠️ Không gọi được AI — dùng nhận định tự động (rule-based).'); }
+  } else setStatus('');
+  renderReport(ai);
+  $('#genBtn').textContent='⚡ Tạo báo cáo';
   $('#dlBtn').style.display='inline-block';
   $('#report').scrollIntoView({behavior:'smooth'});
-});
+}
+
+async function getAINarrative(){
+  const pack=o=>({domain:o.domain,dr:o.dr,ur:o.ur,okw:o.okw,kTop3:o.kTop3,traffic:o.traffic,value:o.value,
+    refAll:o.refAll,refFol:o.refFol,blAll:o.blAll,ptraffic:o.ptraffic,countries:o.countries});
+  const payload={tone:$('#tone').value,self:pack(STATE.self),competitors:STATE.comps.map(pack)};
+  const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!res.ok) throw new Error('api '+res.status);
+  const d=await res.json();
+  if(!d||!d.S) throw new Error('bad payload');
+  return d;
+}
 
 function applyColors(){
   const p=$('#cPrimaryHex').value.trim()||'#004aed';
@@ -391,6 +524,105 @@ function donut(segs,centerTop,centerSub){
 }
 function legend(segs){return `<div class="legend">${segs.map(s=>`<span><i style="background:${s.color}"></i>${s.label}${s.pct!=null?' '+s.pct+'%':''}</span>`).join('')}</div>`;}
 
+/* generic compare mini-table */
+function miniTable(defs,self,comps,all){
+  const head=`<th>Chỉ số</th><th class="self-col">${self.domain} <span class="badge b-self">Bạn</span></th>`+comps.map(c=>`<th>${c.domain}</th>`).join('');
+  const f=(v,t)=>v==null?'—':t==='pct'?v.toFixed(0)+'%':t==='x1'?v.toFixed(1):t==='money'?fmtMoney(v):fmt(v);
+  const body=defs.map(([label,key,low,type])=>{
+    const vals=all.map(o=>o[key]).filter(x=>x!=null);
+    if(!vals.length)return '';
+    const best=low?Math.min(...vals):Math.max(...vals);
+    const cell=o=>{const v=o[key];const b=v!=null&&v===best;return `<td${o===self?' class="self-col"':''}>${f(v,type)} ${b?'<span class="badge b-best">#1</span>':''}</td>`;};
+    return `<tr><td class="metric">${label}</td>${cell(self)}${comps.map(cell).join('')}</tr>`;
+  }).join('');
+  return `<div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* scatter (DR × Traffic) */
+function scatter(self,all){
+  const xmax=Math.max(...all.map(o=>o.dr||0),10)*1.1, ymax=Math.max(...all.map(o=>o.traffic||0),10)*1.14;
+  const W=620,H=380,L=58,B=46,T=22,R=22;
+  const px=v=>L+v/xmax*(W-L-R), py=v=>H-B-v/ymax*(H-B-T);
+  let g='';
+  for(let i=0;i<=4;i++){const gy=H-B-i/4*(H-B-T),gx=L+i/4*(W-L-R);
+    g+=`<line class="grid-l" x1="${L}" y1="${gy.toFixed(1)}" x2="${W-R}" y2="${gy.toFixed(1)}"/>`;
+    g+=`<text class="axl" x="${L-8}" y="${(gy+4).toFixed(1)}" text-anchor="end">${fmt(Math.round(ymax*i/4))}</text>`;
+    g+=`<text class="axl" x="${gx.toFixed(1)}" y="${H-B+18}" text-anchor="middle">${Math.round(xmax*i/4)}</text>`;}
+  const pts=all.map(o=>{const isS=o===self,cx=px(o.dr||0),cy=py(o.traffic||0),r=isS?12:9,
+    col=isS?PALETTE[0]:compColor(all.filter(x=>x!==self).indexOf(o));
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${col}" opacity="${isS?.95:.7}" stroke="#fff" stroke-width="2"/>
+      <text x="${cx.toFixed(1)}" y="${(cy-r-5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="${isS?700:500}" fill="var(--ink)">${o.domain.slice(0,18)}</text>`;}).join('');
+  return `<svg class="scatter" viewBox="0 0 ${W} ${H}">${g}
+    <line class="grid-l" x1="${L}" y1="${T}" x2="${L}" y2="${H-B}"/>
+    <text class="axl" x="${W/2}" y="${H-6}" text-anchor="middle" font-weight="600">Domain Rating →</text>
+    <text class="axl" x="14" y="${(H-B)/2}" text-anchor="middle" font-weight="600" transform="rotate(-90 14 ${(H-B)/2})">Organic Traffic →</text>
+    ${pts}</svg>`;
+}
+
+/* ----- section content builders ----- */
+function blkKwdist(self){
+  const kd=[['Top 3','kTop3'],['4–10','k410'],['11–20','k1120'],['21–50','k2150'],['51+','k51']];
+  const cols=[PALETTE[0],'#8a7bf8',PALETTE[1]||'#22d39a',PALETTE[2]||'#f59e0b',PALETTE[3]||'#ef4444'];
+  const segs=kd.map(([lbl,k],i)=>({label:lbl,value:self[k]||0,color:cols[i]}));
+  const tot=segs.reduce((s,x)=>s+x.value,0)||1;
+  const bar=segs.map(s=>`<i style="width:${s.value/tot*100}%;background:${s.color}" title="${s.label}: ${fmt(s.value)}"></i>`).join('');
+  const note=self.top3Share!=null?`<p class="desc" style="margin-top:14px">${self.top3Share>=35?`<b>${self.top3Share.toFixed(0)}%</b> từ khóa nằm Top 3 — nền nội dung & thẩm quyền tốt.`:`Chỉ <b>${self.top3Share.toFixed(0)}%</b> từ khóa ở Top 3; phần lớn còn ở trang 1 phía dưới — dư địa tối ưu on-page để đẩy lên Top 3.`}</p>`:'';
+  return `<div class="stackbar">${bar}</div><div class="stk-lbl"><span style="color:var(--muted);font-weight:500">Tổng ${fmt(tot)} từ khóa của ${self.domain}</span></div>${legend(segs.map(s=>({label:s.label,color:s.color,pct:Math.round(s.value/tot*100)})))}${note}`;
+}
+function blkBacklink(self,comps,all){
+  const defs=[['Referring domains','refAll',false,'n'],['— Followed','refFol',false,'n'],['— Not followed','refNo',true,'n'],
+    ['% Followed','folShare',false,'pct'],['Backlinks','blAll',false,'n'],['Ref. IPs','refIP',false,'n'],['Subnets (đa dạng IP)','refSub',false,'n'],
+    ['Backlinks / Ref domain','blPerRef',false,'x1'],['Outgoing links','outLinkAll',true,'n']];
+  let note='';
+  if(self.folShare!=null)note+=`Tỉ lệ followed <b>${self.folShare.toFixed(0)}%</b> ${self.folShare>=60?'— hồ sơ link lành mạnh.':'— hơi thấp, nhiều link không truyền sức mạnh.'} `;
+  if(self.blPerRef!=null)note+=`Trung bình <b>${self.blPerRef.toFixed(1)}</b> backlink/referring domain.`;
+  return miniTable(defs,self,comps,all)+(note?`<p class="desc" style="margin-top:14px">${note}</p>`:'');
+}
+function blkChannel(self,comps,all){
+  const rows=all.map(o=>{const org=o.traffic||0,paid=o.ptraffic||0,tot=org+paid||1;return{o,org,paid,po:org/tot*100,pp:paid/tot*100};});
+  const bars=rows.map(r=>`<div style="margin-bottom:13px">
+    <div class="stk-lbl" style="margin-bottom:5px"><span style="font-weight:${r.o===self?700:500}">${r.o.domain}${r.o===self?' (Bạn)':''}</span><span style="color:var(--muted)">Paid ${r.pp.toFixed(1)}%</span></div>
+    <div class="stackbar"><i style="width:${r.po}%;background:${PALETTE[0]}" title="Organic ${fmt(r.org)}"></i><i style="width:${r.pp}%;background:${PALETTE[2]||'#f59e0b'}" title="Paid ${fmt(r.paid)}"></i></div></div>`).join('');
+  const note=(!self.ptraffic||self.ptraffic===0)?`<b>${self.domain}</b> gần như chưa dùng Paid Search — cơ hội test Google Ads cho từ khóa thương mại; hoặc là lợi thế chi phí nếu organic đã đủ mạnh.`:`<b>${self.domain}</b> đang kết hợp cả Organic & Paid.`;
+  return `${bars}${legend([{label:'Organic',color:PALETTE[0]},{label:'Paid',color:PALETTE[2]||'#f59e0b'}])}<p class="desc" style="margin-top:14px">${note}</p>`;
+}
+function blkMatrix(self,all){
+  const note=`Trục ngang = Domain Rating (sức mạnh link), trục dọc = Organic Traffic. Góc trên-phải là vị thế lý tưởng. Bong bóng <b>màu chính</b> là ${self.domain}.`;
+  return `${scatter(self,all)}<p class="desc" style="margin-top:10px;text-align:center">${note}</p>`;
+}
+function blkOpportunity(self,comps,all){
+  const leader=[...all].sort((a,b)=>(b.traffic||0)-(a.traffic||0))[0];
+  const gap=Math.max((leader.traffic||0)-(self.traffic||0),0);
+  const gapPct=self.traffic?gap/self.traffic*100:null;
+  const vGap=Math.max((leader.value||0)-(self.value||0),0);
+  const ahead=comps.filter(c=>(c.traffic||0)>(self.traffic||0)).sort((a,b)=>(b.traffic||0)-(a.traffic||0));
+  const isLeader=leader===self;
+  const cards=`<div class="cards">
+    <div class="stat"><div class="k">Khoảng cách tới đối thủ dẫn đầu</div><div class="v">${isLeader?'Dẫn đầu':fmt(gap)}</div><div class="d">${isLeader?'Bạn đang số 1':'traffic/tháng cần bù'}</div></div>
+    <div class="stat"><div class="k">Tương đương tăng trưởng</div><div class="v">${isLeader?'—':gapPct!=null?'+'+gapPct.toFixed(0)+'%':'—'}</div><div class="d">${isLeader?'':'so với hiện tại của bạn'}</div></div>
+    <div class="stat"><div class="k">Chênh lệch giá trị traffic</div><div class="v">${isLeader?'—':fmtMoney(vGap)}</div><div class="d">${isLeader?'':'/tháng (ước tính)'}</div></div>
+    <div class="stat"><div class="k">Số đối thủ đang vượt bạn</div><div class="v">${ahead.length}<span style="font-size:15px;color:var(--muted)">/${comps.length}</span></div><div class="d">về organic traffic</div></div></div>`;
+  const lead=isLeader?`<p class="desc" style="margin-top:16px"><b>${self.domain}</b> đang dẫn đầu nhóm về organic traffic — trọng tâm là phòng thủ thị phần.</p>`
+    :`<p class="desc" style="margin-top:16px">Để bắt kịp <b>${leader.domain}</b>, ${self.domain} cần thêm khoảng <b>${fmt(gap)}</b> lượt truy cập/tháng — tương đương tăng <b>${gapPct?gapPct.toFixed(0):'—'}%</b> so với hiện tại.</p>`;
+  return cards+lead;
+}
+function blkGeo(self,all){
+  const parse=s=>{if(!s)return '—';const m=String(s).match(/\(?\s*([a-z]{2})\s*,\s*([\d.]+)\)?/i);return m?`${m[1].toUpperCase()} · ${fmt(num(m[2]))} traffic`:String(s);};
+  const rows=all.map(o=>`<tr><td class="metric${o===self?' self-col':''}">${o.domain}${o===self?' <span class="badge b-self">Bạn</span>':''}</td><td${o===self?' class="self-col"':''}>${parse(o.countries)}</td></tr>`).join('');
+  return `<div class="scroll"><table><thead><tr><th>Website</th><th>Thị trường trọng điểm (Top country)</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="desc" style="margin-top:14px">Giúp xác định nên tối ưu nội dung & backlink theo thị trường nào. Nếu đối thủ tập trung cùng quốc gia với bạn, mức độ cạnh tranh trực tiếp càng cao.</p>`;
+}
+function blkQuickwins(a){
+  const items=[...a.O,...a.W];
+  const seen=new Set(),uniq=items.filter(x=>!seen.has(x)&&seen.add(x)).slice(0,6);
+  if(!uniq.length)return `<p class="desc">Chưa phát hiện điểm cần ưu tiên rõ rệt — tiếp tục duy trì lợi thế hiện tại.</p>`;
+  const tag=(i)=>i<2?'<span class="badge b-best">Ưu tiên cao</span>':i<4?'<span class="badge" style="background:color-mix(in srgb,var(--sec2,#f59e0b) 18%,#fff);color:#9a6b00">Trung bình</span>':'<span class="badge" style="background:#eef0f6;color:#666">Dài hạn</span>';
+  return `<ol style="list-style:none;counter-reset:qw;display:flex;flex-direction:column;gap:11px">
+    ${uniq.map((x,i)=>`<li style="display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.5">
+      <span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">${i+1}</span>
+      <span>${x} ${tag(i)}</span></li>`).join('')}</ol>`;
+}
+
 /* ===================================================================
    EXECUTIVE SUMMARY (narrative)
 =================================================================== */
@@ -451,11 +683,21 @@ function execSummary(self,comps,all,a,tone){
 /* ===================================================================
    RENDER
 =================================================================== */
-function renderReport(){
+function renderReport(ai){
   const {self,comps,all}=STATE;
   const a=analyze(self,comps,all);
   const tone=$('#tone').value;
   const ex=execSummary(self,comps,all,a,tone);
+  // Overlay nhận định AI nếu có (số liệu/biểu đồ vẫn từ code; chỉ thay phần chữ)
+  if(ai){
+    if(ai.S&&ai.S.length)a.S=ai.S;
+    if(ai.W&&ai.W.length)a.W=ai.W;
+    if(ai.O&&ai.O.length)a.O=ai.O;
+    if(ai.T)a.T=ai.T;
+    if(ai.lead)ex.lead=ai.lead;
+    if(ai.pillars&&ai.pillars.length)ex.pillars=ai.pillars;
+    if(ai.verdict)ex.verdict=ai.verdict;
+  }
   const lp=$('#logoPrev'),cp=$('#clientLogoPrev');
   const ourLogo=lp.src&&lp.style.display!=='none'?`<div class="logo"><img src="${lp.src}"></div>`:'<div></div>';
   const clientLogo=cp.src&&cp.style.display!=='none'?`<div class="logo logo-r"><img src="${cp.src}"></div>`:'<div></div>';
@@ -513,75 +755,75 @@ function renderReport(){
   };
   const swotHTML=ex.swotOrder.map(k=>{const q=quadDefs[k];return `<div class="quad ${q.cls}"><h4>${q.title}</h4><ul>${swotList(q.data)}</ul></div>`;}).join('');
 
-  $('#report').innerHTML=`
-    <div class="toolbar no-print">
-      <button id="editToggle" onclick="toggleEdit(this)">✏️ Bật chỉnh sửa</button>
-      <button onclick="window.print()">🖨️ Xuất PDF</button>
-      <span class="editnote">✓ Đang ở chế độ sửa — click vào chữ để gõ đè, thêm/bớt nội dung. Bấm “Xuất PDF” khi xong.</span>
-    </div>
-    <div class="rephead">
-      <div class="top">
-        ${ourLogo}
-        ${clientLogo}
-      </div>
-      <span class="pill">SEO Competitor Report</span>
-      <h2>Competitor Analysis &amp; SWOT</h2>
-      <div class="meta">Domain nội tại: <b>${self.domain}</b> · So sánh với ${comps.length} đối thủ · Share of Voice ${selfSov}%</div>
-      <div class="meta" style="opacity:.82;margin-top:2px">Ngày tạo: ${today} · Nguồn: Ahrefs Batch Analysis</div>
-    </div>
+  /* ---- build section blocks ---- */
+  const secWrap=(key,title,desc,inner,extra='')=>`
+    <section class="section rsection ${extra}" data-sec="${key}">
+      <div class="sec-ctrl no-print"><button type="button" class="eye" onclick="toggleSec(this)">👁️ Ẩn khỏi PDF</button></div>
+      <h3><span class="dot"></span>${title}</h3>
+      ${desc?`<p class="desc">${desc}</p>`:''}
+      ${inner}
+    </section>`;
 
-    <div class="section">
-      <h3><span class="dot"></span>Tổng quan vị thế</h3>
-      <p class="desc">Chỉ số chính của ${self.domain} so với trung bình ${comps.length} đối thủ.</p>
-      <div class="cards">
+  const blocks={
+    overview:secWrap('overview','Tổng quan vị thế',`Chỉ số chính của ${self.domain} so với trung bình ${comps.length} đối thủ.`,
+      `<div class="cards">
         ${stat('Domain Rating','dr','drAvg',false)}
         ${stat('Organic Traffic','traffic','trAvg',false)}
         ${stat('Referring Domains','refAll','refAvg',false)}
         <div class="stat"><div class="k">Hạng Organic Traffic</div><div class="v">#${a.trRank||'—'}<span style="font-size:15px;color:var(--muted)">/${a.N}</span></div><div class="d">trong nhóm so sánh</div></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h3><span class="dot"></span>Biểu đồ trực quan</h3>
-      <p class="desc">Cột màu chính là website của bạn.</p>
-      <div class="chartwrap">
+      </div>`),
+    charts:secWrap('charts','Biểu đồ trực quan','Cột màu chính là website của bạn.',
+      `<div class="chartwrap">
         <div class="chartbox"><h4>Share of Voice — Thị phần Organic Traffic</h4>
-          <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">${donut(sovSegs,selfSov+'%',self.domain.slice(0,14))}<div>${legend(sovSegs)}</div></div>
-        </div>
+          <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">${donut(sovSegs,selfSov+'%',self.domain.slice(0,14))}<div>${legend(sovSegs)}</div></div></div>
         <div class="chartbox"><h4>Organic Traffic / tháng</h4>${hBars(trItems,fmt)}</div>
         <div class="chartbox"><h4>Domain Rating</h4>${hBars(drItems,fmt)}</div>
         <div class="chartbox"><h4>Referring Domains</h4>${hBars(refItems,fmt)}</div>
-      </div>
-      <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">Phân bổ thứ hạng từ khóa — ${self.domain}</h4>
-        <div class="stackbar">${kdBar}</div>
-        <div class="stk-lbl"><span style="color:var(--muted);font-weight:500">Tổng ${fmt(kdTot)} từ khóa</span></div>
-        ${legend(kdSegs.map(s=>({label:s.label,color:s.color,pct:Math.round(s.value/kdTot*100)})))}
-      </div>
-    </div>
+      </div>`),
+    kwdist:secWrap('kwdist','Phân bổ thứ hạng từ khóa','Bạn đang mạnh ở "trang mấy" của Google.',blkKwdist(self)),
+    backlink:secWrap('backlink','Hồ sơ Backlink chuyên sâu','Chất lượng & độ đa dạng của hồ sơ liên kết.',blkBacklink(self,comps,all)),
+    channel:secWrap('channel','Cơ cấu kênh: Organic vs Paid','Mức độ phụ thuộc quảng cáo trả phí.',blkChannel(self,comps,all)),
+    matrix:secWrap('matrix','Ma trận định vị cạnh tranh','',blkMatrix(self,all)),
+    opportunity:secWrap('opportunity','Định cỡ cơ hội Traffic','Khoảng cách cần lấp để bắt kịp nhóm dẫn đầu.',blkOpportunity(self,comps,all)),
+    geo:secWrap('geo','Tập trung địa lý','Thị trường trọng điểm theo lưu lượng.',blkGeo(self,all)),
+    quickwins:secWrap('quickwins','Quick Wins — Việc nên làm trước','Ưu tiên theo mức tác động.',blkQuickwins(a)),
+    table:secWrap('table','Bảng so sánh chi tiết','Ô <span class="badge b-best">#1</span> = dẫn đầu chỉ số đó. Cột tô đậm là website của bạn.',
+      `<div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`),
+    swot:secWrap('swot','Phân tích SWOT',`Tự động suy luận từ chỉ số SEO của ${self.domain} trong tương quan đối thủ.`,
+      `<div class="swot">${swotHTML}</div>`),
+    exec:secWrap('exec','Tổng kết &amp; Đề xuất chiến lược','',
+      `<p class="lead">${ex.lead}</p>
+      <div class="pillars">${ex.pillars.map(p=>`<div class="pillar"><div class="n">${p.n}</div><h5>${p.h}</h5><p>${p.p}</p></div>`).join('')}</div>
+      <div class="verdict">${ex.verdict}</div>`,'exec')
+  };
 
-    <div class="section">
-      <h3><span class="dot"></span>Bảng so sánh chi tiết</h3>
-      <p class="desc">Ô <span class="badge b-best">#1</span> = dẫn đầu chỉ số đó. Cột tô đậm là website của bạn.</p>
-      <div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
-    </div>
+  const sel=new Set(selectedKeys());
+  const chosen=SECTION_ORDER.filter(k=>sel.has(k)&&blocks[k]);
+  const secHTML=chosen.map(k=>blocks[k]).join('');
 
-    <div class="section">
-      <h3><span class="dot"></span>Phân tích SWOT</h3>
-      <p class="desc">Tự động suy luận từ chỉ số SEO của ${self.domain} trong tương quan đối thủ.</p>
-      <div class="swot">${swotHTML}</div>
+  $('#report').innerHTML=`
+    <div class="toolbar no-print">
+      <button id="editToggle" onclick="toggleEdit(this)">✏️ Bật chỉnh sửa</button>
+      <button onclick="window.print()">🖨️ Xuất PDF</button>
+      <span class="editnote">✓ Đang ở chế độ sửa — click vào chữ để gõ đè. Nút 👁️ ở mỗi mục để ẩn/hiện khi xuất PDF.</span>
     </div>
-
-    <div class="section exec">
-      <h3><span class="dot"></span>Tổng kết &amp; Đề xuất chiến lược</h3>
-      <p class="lead">${ex.lead}</p>
-      <div class="pillars">
-        ${ex.pillars.map(p=>`<div class="pillar"><div class="n">${p.n}</div><h5>${p.h}</h5><p>${p.p}</p></div>`).join('')}
-      </div>
-      <div class="verdict">${ex.verdict}</div>
+    <div class="rephead">
+      <div class="top">${ourLogo}${clientLogo}</div>
+      <span class="pill">SEO Report Studio</span>
+      <h2>SEO Performance &amp; Competitive Report</h2>
+      <div class="meta">Domain nội tại: <b>${self.domain}</b> · So sánh với ${comps.length} đối thủ · Share of Voice ${selfSov}%</div>
+      <div class="meta" style="opacity:.82;margin-top:2px">Ngày tạo: ${today} · Nguồn: Ahrefs Batch Analysis</div>
     </div>
+    ${secHTML}
   `;
   $('#report').style.display='block';
+}
+
+/* ---------------- Per-section PDF toggle ---------------- */
+function toggleSec(btn){
+  const s=btn.closest('.rsection');
+  const off=s.classList.toggle('sec-off');
+  btn.textContent=off?'➕ Hiện lại':'👁️ Ẩn khỏi PDF';
 }
 
 /* ---------------- Inline editing ---------------- */
@@ -603,7 +845,7 @@ $('#dlBtn').addEventListener('click',()=>{
   const styleEl=document.querySelector('style').outerHTML;
   const inlineVars=`<style>:root{--primary:${cv.getPropertyValue('--primary')};--sec1:${cv.getPropertyValue('--sec1')};--sec2:${cv.getPropertyValue('--sec2')};--sec3:${cv.getPropertyValue('--sec3')};}</style>`;
   const clone=$('#report').cloneNode(true);
-  clone.querySelectorAll('.toolbar').forEach(t=>t.remove());
+  clone.querySelectorAll('.toolbar,.sec-ctrl,.rsection.sec-off').forEach(t=>t.remove());
   clone.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));
   const html=`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SEO Report — ${STATE.self.domain}</title>
